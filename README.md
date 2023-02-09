@@ -4,75 +4,51 @@ A tool to help with NLP processing and entity relation extraction.
 
 ## Data Sourcing
 
-To downloads data from a source, and convert it in a format that can be used for a relationship extraction task:
+### Download
+
+To **download** data from a source, and convert it in a format that can be used for a relationship extraction task:
+
 `perlego source -s [SOURCE]`
 
 Where:
 - **SOURCE** is one option among [concerts, treebank]
 
-To list the already downloaded sources and the count of items per each source:
+### Item Count
+
+To list the already downloaded sources and the **count of items** per each source:
+
 `perlego source -c`
 
-## Tagging
+### Export Entities to a CSV File
 
-`perlego tag -l [LANG] -s [SOURCE] -m [MODE] -e [ENTS_PATH] -r [RELS_PATH]`
+After download, the entities will have tags based on Wikipedia Entries. The entities can be downloaded via the command:
+
+`perlego source -e [CSV_PATH]`
 
 Where:
-- **LANG** is one option among [la, en]
-- **SOURCE** is one option among [concerts, treebank]
-- **MODE** is one option among [manual, wiki]
-- **ENTS_PATH** is the file containing a list of possible entities, one entity per line, e.g.
-```
-ANIMAL
-PERSON
-FRUIT
-...
-```
-- **RELS_PATH** is the file containing a list of possible relationships between the ENTS, one relationship per line
-Relationships are expressed in the format ENT1_ACTION_ENT2, e.g.
-```
-PERSON_EATS_FRUIT
-PERSON_EATS_ANIMAL
-ANIMAL_EATS_FRUIT
-...
-```
+- **CSV_PATH** is the file destination
 
-### Manual Option
+### Import Entities from a CSV File
 
-It starts a cli tool to manually tag entities and relationships in a given downloaded source
+A CSV file like the above has a column headed as "custom". There it's possible to define a custom label for the entity, and then import again:
 
-### Wiki Option
+`perlego source -i [CSV_PATH]`
 
-It starts a cli tool to tag entities using wikipedia and manually tag relationships in a given downloaded source
-
-## Machine Learning
-
-Performs the training in spacy
-
-`perlego train -l 'latin' -s [SOURCE_PATH]`
 Where:
-- **SOURCE** is one option among [concerts, treebank]
+- **CSV_PATH** is the file to be read
+## Training
 
-Performs a prediction over text contained in an input file
+### Prepare data for training
 
-`perlego predict -l 'latin' -s [SOURCE_PATH] -i [INPUT_PATH]`
+If sources had been downloaded, they can be used to generate Spacy training data
+
+`perlego train -t [TRAINING_TYPE] -l [LANGUAGE] -ds [DEV_SIZE] -ts [TRAIN_SIZE]`
+
 Where:
-- **SOURCE** is one option among [concerts, treebank]
-- **INPUT_PATH** is the file containing the text upon which making predictions
-  
-# Database Structure
+- **TRAINING_TYPE** is one option among [entities, relations]
+- **LANGUAGE** only "la" supported at the moment
+- **DEV_SIZE** is the size size of data to be converted for Spacy DEV training step (fraction of 1)
+- **TRAIN_SIZE** is the size size of data to be converted for Spacy TRAIN training step (fraction of 1)
 
-(For each language)
 
-raw_source
-    (id, text, info: [{ type, start_index, end_index, label }])
-
-entities
-    (id, lemma, variants: [], label)
-
-relations
-    (id, start_ent_id, end_ent_id, label)
-
-training_data
-    (id, text, entities: [{ start_index, ent_id, weight }], relations: [{ start_ent, end_ent, label, weight }])
 

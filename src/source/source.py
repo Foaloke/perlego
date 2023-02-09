@@ -9,7 +9,7 @@ class SourceCode(Enum):
     CONCERTS = "concerts"
 
 
-class StoreCode(Enum):
+class SourceOutcomeCode(Enum):
     DOWNLOADED = "DOWNLOADED"
     ALREADY_DOWNLOADED = "ALREADY_DOWNLOADED"
     PERSISTED = "PERSISTED"
@@ -39,19 +39,30 @@ class Source(ABC):
         pass
 
     @abstractmethod
-    def count():
+    def count(self):
+        pass
+
+    @abstractmethod
+    def get_all_ents(self):
+        pass
+
+    @abstractmethod
+    def add_entity_custom_label(self, lemma, custom_label):
         pass
 
     def store(self, force):
         codes = []
+        # Download
         if not force and self.is_already_downloaded():
-            codes.append(StoreCode.ALREADY_DOWNLOADED)
+            codes.append(SourceOutcomeCode.ALREADY_DOWNLOADED)
         else:
             self.download()
-            codes.append(StoreCode.DOWNLOADED)
+            codes.append(SourceOutcomeCode.DOWNLOADED)
+
+        # Persist
         if not force and self.is_already_persisted():
-            codes.append(StoreCode.ALREADY_PERSISTED)
+            codes.append(SourceOutcomeCode.ALREADY_PERSISTED)
         else:
             self.persist()
-            codes.append(StoreCode.PERSISTED)
+            codes.append(SourceOutcomeCode.PERSISTED)
         return codes

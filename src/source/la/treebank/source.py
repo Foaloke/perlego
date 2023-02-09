@@ -140,7 +140,8 @@ class TreebankSource(Source):
             map(lambda f: os.path.join(path, f), os.listdir(path))
         )
         raw_sources = flatmap(extract_raw_sources, data_full_paths)
-        for raw_source in raw_sources:
+        already_persisted_index = self.count() - 1
+        for raw_source in raw_sources[already_persisted_index:]:
             print(
                 "\n\nExtracting entities from:"
                 + f"\n```\n{raw_source.to_string()}\n\n```\n\n"
@@ -174,3 +175,13 @@ class TreebankSource(Source):
         return RawSource.count_source_elements_in_db(
             SourceCode.TREEBANK, self.db
         )
+
+    def get_all_ents(self):
+        returned_ents = []
+        all_ents = Entity.load_all(self.db)
+        for e in all_ents:
+            returned_ents.append({"lemma": e["lemma"], "labels": e["labels"]})
+        return returned_ents
+
+    def add_entity_custom_label(self, lemma, custom_label):
+        Entity.update_custom_label(self.db, lemma, custom_label)

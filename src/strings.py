@@ -1,16 +1,30 @@
-from source.source import StoreCode
+from source.source import SourceOutcomeCode
+from train.train import TrainOutcomeCode
 
 
 def code_string(code, *args):
-    if code == StoreCode.DOWNLOADED:
+    if code == SourceOutcomeCode.DOWNLOADED:
         source = args[0]
         return f"The source '{source}' has been downloaded"
-    if code == StoreCode.ALREADY_DOWNLOADED:
+    if code == SourceOutcomeCode.ALREADY_DOWNLOADED:
         source = args[0]
-        return f"The source '{source}' was already downloaded. Read the 'help' to understand how to repeat the process."
-    if code == StoreCode.PERSISTED:
+        return (
+            f"The source '{source}' was already downloaded. Read the 'help'"
+            + " to understand how to repeat the process."
+        )
+    if code == SourceOutcomeCode.PERSISTED:
         source = args[0]
         return f"The source '{source}' has been persisted"
-    if code == StoreCode.ALREADY_PERSISTED:
+    if code == SourceOutcomeCode.ALREADY_PERSISTED:
         source = args[0]
-        return f"The source '{source}' was already persisted. Read the 'help' to understand how to repeat the process."
+        return (
+            f"The source '{source}' was already persisted."
+            + " Read the 'help' to understand how to repeat the process."
+        )
+    if code == TrainOutcomeCode.NO_DATA_FOR_LANGUAGE:
+        language = args[0]
+        return (
+            f"The language '{language}' has no saved entries."
+            + " Maybe the command 'source' has to be run first,"
+            + " in order to fill in the database with data?"
+        )

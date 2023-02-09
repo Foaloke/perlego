@@ -32,6 +32,6 @@
 ## Machine Learning - Predict
 - 1SP) Add the command (which relies on spacy)
 
-# Progress
+# Bugs
 
-## Iteration 1
+- Sometimes Lemmas in Treebank have only the initial letter of a name. 
