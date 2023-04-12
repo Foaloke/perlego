@@ -1,5 +1,5 @@
-from source.source import SourceOutcomeCode
-from train.train import TrainOutcomeCode
+from commands.source.source import SourceOutcomeCode
+from commands.train.train_codes import TrainOutcomeCode
 
 
 def code_string(code, *args):
@@ -10,7 +10,13 @@ def code_string(code, *args):
         source = args[0]
         return (
             f"The source '{source}' was already downloaded. Read the 'help'"
-            + " to understand how to repeat the process."
+            " to understand how to repeat the process if needed."
+        )
+    if code == SourceOutcomeCode.MANUAL_DOWNLOAD_REQUIRED:
+        source = args[0]
+        return (
+            f"The source '{source}' needs the user to manually download"
+            " the required files and place them in the data directory."
         )
     if code == SourceOutcomeCode.PERSISTED:
         source = args[0]
@@ -19,12 +25,12 @@ def code_string(code, *args):
         source = args[0]
         return (
             f"The source '{source}' was already persisted."
-            + " Read the 'help' to understand how to repeat the process."
+            " Read the 'help' to understand"
+            " how to repeat the process if needed."
         )
     if code == TrainOutcomeCode.NO_DATA_FOR_LANGUAGE:
-        language = args[0]
         return (
-            f"The language '{language}' has no saved entries."
-            + " Maybe the command 'source' has to be run first,"
-            + " in order to fill in the database with data?"
+            f"There is no saved entries."
+            " Maybe the command 'source' has to be run first,"
+            " in order to fill in the database with data?"
         )

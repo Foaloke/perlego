@@ -1,5 +1,5 @@
+from commands.source.source import SourceCode
 from db.labelled_db import DBTableName, DBWithLabel
-from source.source import SourceCode
 
 
 class RawSourceInfo:
@@ -75,7 +75,14 @@ class RawSource:
         return string
 
     @staticmethod
+    def load_all(db: DBWithLabel):
+        return db.load_all(DBTableName.RAW_SOURCE)
+
+    @staticmethod
     def count_source_elements_in_db(source_code: SourceCode, db: DBWithLabel):
-        return db.count_where_attr_equals_value(
+        count = db.count_where_attr_equals_value(
             DBTableName.RAW_SOURCE, "source_code", source_code.value
         )
+        if not count:
+            return 0
+        return count

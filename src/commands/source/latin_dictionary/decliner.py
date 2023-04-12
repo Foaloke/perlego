@@ -192,12 +192,16 @@ def load_forms(nominative):
 def resolve_nominative(form):
     # May be already nominative
     forms = load_forms(form)
+
+    print('FORMS', forms)
     if forms:
         print(
             "The form",
             unidecode(form),
             "is already nominative with forms",
-            ", ".join(lmap(unidecode, forms)),
+            ", ".join(lmap(
+                unidecode, lmap(lambda f: f[1], forms)
+            )),
         )
         _, resolved_form = forms[0]
         return resolved_form

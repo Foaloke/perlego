@@ -1,38 +1,23 @@
-import itertools
 import os
 import shutil
-from functools import reduce
 
 from git import Repo
 
+from commands.source.entity_tagger import tag
+from commands.source.la.treebank.expected_source_files import \
+    EXPECTED_SOURCE_FILES
+from commands.source.la.treebank.extractor import extract_raw_sources
+from commands.source.la.treebank.pnoun_clusterer import PNOUN_CLUSTER_TYPE
+from commands.source.source import Source, SourceCode, SourceOutcomeCode
 from db.entity import Entity
 from db.labelled_db import DBLabel, DBWithLabel
 from db.raw_source import RawSource
-from source.entity_tagger import tag
-from source.entity_variants import get_abbreviations, get_variants
-from source.la.treebank.extractor import extract_raw_sources
-from source.la.treebank.pnoun_clusterer import PNOUN_CLUSTER_TYPE
-from source.source import Source, SourceCode
 from utils.file import delete_dir_if_exists
-from utils.lambda_utils import flatmap, lmap
+from utils.lambda_utils import flatmap
+from utils.language_utils import load_forms_of
 
-LATIN = "la"
 TREEBANK_REPO = "https://github.com/PerseusDL/treebank_data.git"
-EXPECTED_SOURCE_FILES = [
-    "phi0448.phi001.perseus-lat1.tb.xml",
-    "phi0474.phi013.perseus-lat1.tb.xml",
-    "phi0620.phi001.perseus-lat1.tb.xml",
-    "phi0631.phi001.perseus-lat1.tb.xml",
-    "phi0690.phi003.perseus-lat1.tb.xml",
-    "phi0959.phi006.perseus-lat1.tb.xml",
-    "phi0972.phi001.perseus-lat1.xml",
-    "phi0975.phi001.perseus-lat1.tb.xml",
-    "phi1221.phi007.perseus-lat1.tb.xml",
-    "phi1348.abo012.perseus-lat1.tb.xml",
-    "phi1351.phi005.perseus-lat1.tb.xml",
-    "tlg0031.tlg027.perseus-lat1.tb.xml",
-]
-EXPECTED_DB_ENTRIES = 12
+EXPECTED_DB_ENTRIES = len(EXPECTED_SOURCE_FILES)
 UNKNOWN_LABEL = "UNKNOWN"
 
 
@@ -74,6 +59,7 @@ class TreebankSource(Source):
             )
 
         delete_dir_if_exists(git_path)
+        return SourceOutcomeCode.DOWNLOADED
 
     def is_already_persisted(self):
         count = RawSource.count_source_elements_in_db(
@@ -82,65 +68,13 @@ class TreebankSource(Source):
         print(f"Counted {count} persisted raw sources")
         return count == EXPECTED_DB_ENTRIES
 
-    def _cluster_forms_in_same_case(self, acc, curr):
-        for c in curr:
-            case_and_form, abbreviations = c
-            case, form = case_and_form
-            if case not in acc.keys():
-                acc[case] = []
-            forms = [form]
-            forms.extend(abbreviations)
-            acc[case].append(forms)
-        return acc
-
-    def _extract_forms_from_clusters(self, case_and_form, default_form):
-
-        clusters_by_case = reduce(
-            self._cluster_forms_in_same_case, case_and_form, {}
-        ).values()
-
-        if len(clusters_by_case) == 0:
-            print(f"No form found for {default_form}")
-            forms = [default_form]
-        else:
-            # Keep only long clusters
-            # (smaller ones are caused by
-            #  dangling or umatched fem/masc sing/plural)
-            max_len = max(lmap(len, clusters_by_case))
-            forms = []
-            for c in clusters_by_case:
-                if len(c) == max_len:
-                    forms.extend(lmap(" ".join, list(itertools.product(*c))))
-
-        return forms
-
-    def load_forms_of(self, entity):
-        entity_tokens = entity.lemma.split(" ")
-
-        case_and_form = []
-        all_latin_abbreviations = get_abbreviations(LATIN)
-        for i, entity_token in enumerate(entity_tokens):
-            variants = get_variants(entity_token, LATIN)
-            case_and_form.append([])
-            entity_token_abbreviations = []
-            if entity_token in all_latin_abbreviations.keys():
-                entity_token_abbreviations = all_latin_abbreviations[
-                    entity_token
-                ]
-            for v in variants:
-                case_and_form[i].append((v, entity_token_abbreviations))
-
-        forms = self._extract_forms_from_clusters(case_and_form, entity.lemma)
-
-        return list(set(forms))
-
     def persist(self):
         path = TreebankSource.base_path()
         data_full_paths = list(
             map(lambda f: os.path.join(path, f), os.listdir(path))
         )
         raw_sources = flatmap(extract_raw_sources, data_full_paths)
-        already_persisted_index = self.count() - 1
+        already_persisted_index = max(self.count() - 1, 0)
         for raw_source in raw_sources[already_persisted_index:]:
             print(
                 "\n\nExtracting entities from:"
@@ -153,13 +87,13 @@ class TreebankSource(Source):
                 for pnoun in pnoun_cluster:
                     entity = Entity(pnoun.label)
                     if not entity.exists_in(self.db):
-                        labels = tag(pnoun.label, LATIN, self.db)
+                        labels = tag(pnoun.label, self.db)
                         if labels:
                             entity.add_labels(labels)
                         else:
                             entity.add_labels([UNKNOWN_LABEL])
 
-                        for f in self.load_forms_of(entity):
+                        for f in load_forms_of(entity.lemma):
                             entity.add_variant_string(f)
 
                         print("Saving entity:", entity.to_string())
@@ -170,6 +104,7 @@ class TreebankSource(Source):
 
                 print("Saving raw source")
                 raw_source.persist(self.db)
+        return SourceOutcomeCode.PERSISTED
 
     def count(self):
         return RawSource.count_source_elements_in_db(
@@ -182,6 +117,12 @@ class TreebankSource(Source):
         for e in all_ents:
             returned_ents.append({"lemma": e["lemma"], "labels": e["labels"]})
         return returned_ents
+
+    def get_all_raw_sources(self):
+        return RawSource.load_all(self.db)
+
+    def load_entity_data_of_lemma(self, lemma):
+        return Entity.get_lemma_and_variants_for_string(lemma, self.db)
 
     def add_entity_custom_label(self, lemma, custom_label):
         Entity.update_custom_label(self.db, lemma, custom_label)

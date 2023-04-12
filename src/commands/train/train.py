@@ -1,14 +1,31 @@
 import os
+from functools import partial
 from pathlib import Path
+from typing import Callable, Iterable
 
+import spacy
 from spacy.cli.init_config import fill_config
 from spacy.cli.train import train
-from spacy.tokens import DocBin
+from spacy.language import Language
+from spacy.tokens import Doc, DocBin
+from spacy.training import Example
 
+# make the config work
+from commands.train.spacy.rel_model import create_instances  # noqa: F401
+from commands.train.spacy.rel_model import create_relation_model  # noqa: F401
+from commands.train.spacy.rel_model import create_tensors  # noqa: F401
+from commands.train.spacy.rel_model import (
+    create_classification_layer,
+)  # noqa: F401
+
+# make the factory work
+from commands.train.spacy.rel_pipe import (
+    make_relation_extractor,
+)  # noqa: F401
+from commands.train.train_codes import TrainOutcomeCode
 from db.entity import Entity
 from db.labelled_db import DBLabel, DBTableName, DBWithLabel
-from train.train import TrainOutcomeCode
-from utils.language_loader import load_latin
+from utils.language_utils import load_latin
 
 SPACY_DATA_PATH = os.path.join("data", "spacy")
 if not os.path.isdir(SPACY_DATA_PATH):
@@ -22,16 +39,36 @@ SPACY_CONFIG_DATA_PATH = os.path.join(SPACY_DATA_PATH, "config.cfg")
 SPACY_MODEL_PATH = os.path.join(SPACY_DATA_PATH, "model")
 
 
-def entity_training_prepare(language, dev_size, limit):
+@spacy.registry.readers("Perlego_Corpus.v1")
+def create_docbin_reader(
+    file: Path,
+) -> Callable[[Language], Iterable[Example]]:
+    return partial(read_files, file)
+
+
+def read_files(file: Path, nlp: Language) -> Iterable[Example]:
+    doc_bin = DocBin().from_disk(file)
+    docs = doc_bin.get_docs(nlp.vocab)
+    for gold in docs:
+        pred = Doc(
+            nlp.vocab,
+            words=[t.text for t in gold],
+            spaces=[t.whitespace_ for t in gold],
+        )
+        pred.ents = gold.ents
+        yield Example(pred, gold)
+
+
+def training_prepare(dev_size, limit):
 
     codes = []
     nlp = None
     db = None
     saved_entries_for_language = None
-    if language == "la":
-        nlp = load_latin()
-        db = DBWithLabel(DBLabel.LA)
-        saved_entries_for_language = db.load_all(DBTableName.RAW_SOURCE)
+
+    nlp = load_latin()
+    db = DBWithLabel(DBLabel.LA)
+    saved_entries_for_language = db.load_all(DBTableName.RAW_SOURCE)
 
     if not saved_entries_for_language:
         codes.append(TrainOutcomeCode.NO_DATA_FOR_LANGUAGE)
@@ -73,7 +110,7 @@ def entity_training_prepare(language, dev_size, limit):
                 if not span:
                     print(
                         f"Skipping entity '{entity.lemma}'"
-                        + " as Spacy doc span creation failed"
+                        " as Spacy doc span creation failed"
                         + f" ({pnoun_cluster['start_index']},"
                         + f" {pnoun_cluster['end_index']})"
                         + f" ({pnoun_cluster['label']})"
@@ -96,7 +133,7 @@ def entity_training_prepare(language, dev_size, limit):
     return codes
 
 
-def entity_training_execute():
+def training_execute():
     codes = []
     fill_config(
         Path(SPACY_CONFIG_DATA_PATH), Path(SPACY_BASE_CONFIG_DATA_PATH)

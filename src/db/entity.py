@@ -58,6 +58,8 @@ class Entity:
 
     @staticmethod
     def from_dict_obj(db_entity, entity_variants=[]):
+        if not db_entity:
+            return None
         entity = Entity(db_entity["lemma"])
         entity.add_labels(db_entity["labels"])
         entity.custom_label = db_entity["custom_label"]

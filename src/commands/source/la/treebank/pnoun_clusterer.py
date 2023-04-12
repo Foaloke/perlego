@@ -1,6 +1,6 @@
 from functools import reduce
 
-from source.la.treebank.converter import is_pnoun, print_word
+from commands.source.la.treebank.converter import is_pnoun, print_word
 from utils.lambda_utils import lmap
 
 PNOUN_CLUSTER_TYPE = "pnoun_cluster"

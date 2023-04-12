@@ -6,7 +6,7 @@ base_path = "data"
 
 class SourceCode(Enum):
     TREEBANK = "treebank"
-    CONCERTS = "concerts"
+    TRASCRIZIONI = "trascrizioni"
 
 
 class SourceOutcomeCode(Enum):
@@ -14,6 +14,7 @@ class SourceOutcomeCode(Enum):
     ALREADY_DOWNLOADED = "ALREADY_DOWNLOADED"
     PERSISTED = "PERSISTED"
     ALREADY_PERSISTED = "ALREADY_PERSISTED"
+    MANUAL_DOWNLOAD_REQUIRED = "MANUAL_DOWNLOAD_REQUIRED"
 
 
 class Source(ABC):
@@ -42,12 +43,12 @@ class Source(ABC):
     def count(self):
         pass
 
-    @abstractmethod
-    def get_all_ents(self):
+    @staticmethod
+    def add_entity_custom_label(lemma, custom_label):
         pass
 
-    @abstractmethod
-    def add_entity_custom_label(self, lemma, custom_label):
+    @staticmethod
+    def get_all_ents(self):
         pass
 
     def store(self, force):
@@ -56,13 +57,11 @@ class Source(ABC):
         if not force and self.is_already_downloaded():
             codes.append(SourceOutcomeCode.ALREADY_DOWNLOADED)
         else:
-            self.download()
-            codes.append(SourceOutcomeCode.DOWNLOADED)
+            codes.append(self.download())
 
         # Persist
         if not force and self.is_already_persisted():
             codes.append(SourceOutcomeCode.ALREADY_PERSISTED)
         else:
-            self.persist()
-            codes.append(SourceOutcomeCode.PERSISTED)
+            codes.append(self.persist())
         return codes

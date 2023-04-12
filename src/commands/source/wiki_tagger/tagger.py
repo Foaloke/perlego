@@ -1,11 +1,12 @@
 import requests
 from unidecode import unidecode
 
+from commands.source.wiki_tagger.codes import AMBIGUOUS
+from commands.source.wiki_tagger.db.wikidata_entity import WikiDataInfo
+from commands.source.wiki_tagger.exceptions import WikiException
 from db.labelled_db import DBLabel, DBWithLabel
-from source.wiki_tagger.codes import AMBIGUOUS
-from source.wiki_tagger.db.wikidata_entity import WikiDataInfo
-from source.wiki_tagger.exceptions import WikiException
 from utils.lambda_utils import lmap
+from utils.language_utils import LATIN
 
 LABEL_LANGUAGE = "en"
 WIKIDATA_API_URL = "https://www.wikidata.org/wiki/Special:EntityData/"
@@ -145,11 +146,11 @@ def get_wiki_property_info(wiki_id):
     return info
 
 
-def tag(lemma, language):
+def tag(lemma):
     try:
         instances = []
-        instances.extend(wikidata_api_search(lemma, language))
-        instances.extend(wikipedia_api_search(lemma, language))
+        instances.extend(wikidata_api_search(lemma, LATIN))
+        instances.extend(wikipedia_api_search(lemma, LATIN))
         tags = list(set(lmap(lambda i: i["value"], instances)))
         return tags
     except WikiException as e:

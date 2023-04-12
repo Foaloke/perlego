@@ -1,11 +1,11 @@
 import xml.etree.ElementTree as ET
 
-from db.raw_source import RawSource, SourceCode
-from source.la.treebank.converter import print_word, to_dict
-from source.la.treebank.pnoun_clusterer import (
+from commands.source.la.treebank.converter import print_word, to_dict
+from commands.source.la.treebank.pnoun_clusterer import (
     PNOUN_CLUSTER_TYPE,
     cluster_pnouns,
 )
+from db.raw_source import RawSource, SourceCode
 from utils.lambda_utils import lmap
 
 
