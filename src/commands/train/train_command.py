@@ -4,7 +4,13 @@ from commands.train.train import training_execute, training_prepare
 from strings import code_string
 
 
-def train_prepare_command(dev_size, train_size, limit):
+def train_prepare_command(
+        dev_size,
+        train_size,
+        limit,
+        source,
+        accepted_labels
+):
 
     if dev_size + train_size != 1.0:
         click.echo(
@@ -13,7 +19,7 @@ def train_prepare_command(dev_size, train_size, limit):
         )
         return
 
-    for code in training_prepare(dev_size, limit):
+    for code in training_prepare(dev_size, limit, source, accepted_labels):
         click.echo(code_string(code))
 
 

@@ -1,10 +1,8 @@
 import xml.etree.ElementTree as ET
 
 from commands.source.la.treebank.converter import print_word, to_dict
-from commands.source.la.treebank.pnoun_clusterer import (
-    PNOUN_CLUSTER_TYPE,
-    cluster_pnouns,
-)
+from commands.source.la.treebank.pnoun_clusterer import cluster_pnouns
+from commands.source.source import INFO_PNOUN_CLUSTER
 from db.raw_source import RawSource, SourceCode
 from utils.lambda_utils import lmap
 
@@ -66,7 +64,7 @@ def extract_raw_sources(data_file):
             raw_source.add_info(
                 cluster["start_index"],
                 cluster["end_index"],
-                PNOUN_CLUSTER_TYPE,
+                INFO_PNOUN_CLUSTER,
                 cluster["label"],
             )
         raw_sources.append(raw_source)

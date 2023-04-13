@@ -3,10 +3,10 @@ import os
 from commands.source.entity_tagger import tag
 from commands.source.la.trascrizioni.expected_source_files import \
     EXPECTED_SOURCE_FILES
-from commands.source.la.trascrizioni.extractor import (TAGGED_PNOUN_LABEL,
-                                                       extract_raw_sources)
+from commands.source.la.trascrizioni.extractor import extract_raw_sources
 from commands.source.latin_dictionary.decliner import resolve_nominative
-from commands.source.source import Source, SourceCode, SourceOutcomeCode
+from commands.source.source import (INFO_PNOUN_CLUSTER, Source, SourceCode,
+                                    SourceOutcomeCode)
 from db.entity import Entity
 from db.labelled_db import DBLabel, DBWithLabel
 from db.raw_source import RawSource
@@ -64,7 +64,7 @@ class TrascrizioniSource(Source):
                             info.start_index:info.end_index
                         ]
                     },
-                    raw_source.get_info_by_type(TAGGED_PNOUN_LABEL),
+                    raw_source.get_info_by_type(INFO_PNOUN_CLUSTER),
                 )
 
                 for marked_item in marked_items:

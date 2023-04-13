@@ -10,18 +10,15 @@ from spacy.language import Language
 from spacy.tokens import Doc, DocBin
 from spacy.training import Example
 
+from commands.source.source import INFO_PNOUN_CLUSTER
 # make the config work
+from commands.train.spacy.rel_model import \
+    create_classification_layer  # noqa: F401
 from commands.train.spacy.rel_model import create_instances  # noqa: F401
 from commands.train.spacy.rel_model import create_relation_model  # noqa: F401
 from commands.train.spacy.rel_model import create_tensors  # noqa: F401
-from commands.train.spacy.rel_model import (
-    create_classification_layer,
-)  # noqa: F401
-
 # make the factory work
-from commands.train.spacy.rel_pipe import (
-    make_relation_extractor,
-)  # noqa: F401
+from commands.train.spacy.rel_pipe import make_relation_extractor  # noqa: F401
 from commands.train.train_codes import TrainOutcomeCode
 from db.entity import Entity
 from db.labelled_db import DBLabel, DBTableName, DBWithLabel
@@ -59,7 +56,7 @@ def read_files(file: Path, nlp: Language) -> Iterable[Example]:
         yield Example(pred, gold)
 
 
-def training_prepare(dev_size, limit):
+def training_prepare(dev_size, limit, source, accepted_labels):
 
     codes = []
     nlp = None
@@ -68,7 +65,22 @@ def training_prepare(dev_size, limit):
 
     nlp = load_latin()
     db = DBWithLabel(DBLabel.LA)
-    saved_entries_for_language = db.load_all(DBTableName.RAW_SOURCE)
+    saved_entries_for_language = []
+
+    if not source:
+        saved_entries_for_language = db \
+            .load_all(
+                DBTableName.RAW_SOURCE,
+                source
+            )
+    else:
+        saved_entries_for_language = db \
+            .load_from_table_where_attr_equals_value(
+                DBTableName.RAW_SOURCE,
+                "source_code",
+                source,
+                multi=True
+            )
 
     if not saved_entries_for_language:
         codes.append(TrainOutcomeCode.NO_DATA_FOR_LANGUAGE)
@@ -87,18 +99,26 @@ def training_prepare(dev_size, limit):
         doc = nlp.make_doc(text)
         ents = []
         for pnoun_cluster in [
-            info for info in entry["info"] if info["type"] == "pnoun_cluster"
+            info for info in entry["info"]
+            if info["type"] == INFO_PNOUN_CLUSTER
         ]:
             start = pnoun_cluster["start_index"]
             end = pnoun_cluster["end_index"]
+            cluster_string = text[start:end]
             entity = Entity.get_lemma_and_variants_for_string(
-                pnoun_cluster["label"], db
+                cluster_string, db
             )
             if not entity:
-                print(f"Entity {pnoun_cluster['label']} was not found")
+                print(f"Entity {cluster_string} was not found")
             elif not entity.custom_label:
                 print(
                     f"Skipping entity {entity.lemma} as it has no custom label"
+                )
+            elif len(accepted_labels) > 0 \
+                    and entity.custom_label not in accepted_labels:
+                print(
+                    f"Skipping entity {entity.lemma}"
+                    f"as label {entity.custom_label} is not recognised"
                 )
             else:
                 span = doc.char_span(
@@ -116,6 +136,9 @@ def training_prepare(dev_size, limit):
                         + f" ({pnoun_cluster['label']})"
                     )
                 else:
+                    print(
+                        f"Adding entity {entity.lemma}"
+                        f" ({entity.custom_label})")
                     ents.append(span)
         doc.ents = ents
         if current_size <= dev_doc_bin_size:

@@ -7,8 +7,8 @@ from commands.source.entity_tagger import tag
 from commands.source.la.treebank.expected_source_files import \
     EXPECTED_SOURCE_FILES
 from commands.source.la.treebank.extractor import extract_raw_sources
-from commands.source.la.treebank.pnoun_clusterer import PNOUN_CLUSTER_TYPE
-from commands.source.source import Source, SourceCode, SourceOutcomeCode
+from commands.source.source import (INFO_PNOUN_CLUSTER, Source, SourceCode,
+                                    SourceOutcomeCode)
 from db.entity import Entity
 from db.labelled_db import DBLabel, DBWithLabel
 from db.raw_source import RawSource
@@ -82,7 +82,7 @@ class TreebankSource(Source):
             )
             if not raw_source.exists_in(self.db):
                 pnoun_cluster = raw_source.get_info_by_type(
-                    PNOUN_CLUSTER_TYPE
+                    INFO_PNOUN_CLUSTER
                 )
                 for pnoun in pnoun_cluster:
                     entity = Entity(pnoun.label)

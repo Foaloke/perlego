@@ -1,5 +1,6 @@
+
 from commands.source.la.treebank.source import TreebankSource
-from commands.source.source import SourceCode
+from commands.source.source import INFO_PNOUN_CLUSTER, SourceCode
 
 
 def custom_relations_command(source):
@@ -9,7 +10,8 @@ def custom_relations_command(source):
         for raw_source in source_instance.get_all_raw_sources():
             text = raw_source["text"]
             pnoun_clusters = [
-                i for i in raw_source["info"] if i["type"] == "pnoun_cluster"
+                i for i in raw_source["info"]
+                if i["type"] == INFO_PNOUN_CLUSTER
             ]
             print("\nTEXT\n\n", text)
 

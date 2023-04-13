@@ -3,6 +3,8 @@ from enum import Enum
 
 base_path = "data"
 
+INFO_PNOUN_CLUSTER = 'pnoun_cluster'
+
 
 class SourceCode(Enum):
     TREEBANK = "treebank"

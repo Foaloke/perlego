@@ -1,9 +1,8 @@
 from functools import reduce
 
 from commands.source.la.treebank.converter import is_pnoun, print_word
+from commands.source.source import INFO_PNOUN_CLUSTER
 from utils.lambda_utils import lmap
-
-PNOUN_CLUSTER_TYPE = "pnoun_cluster"
 
 
 def is_dot(w):
@@ -64,7 +63,7 @@ def to_info(pnoun_cluster):
     return {
         "start_index": pnoun_cluster[0]["start_index"],
         "end_index": pnoun_cluster[len(pnoun_cluster) - 1]["end_index"],
-        "type": PNOUN_CLUSTER_TYPE,
+        "type": INFO_PNOUN_CLUSTER,
         "label": "".join(
             lmap(lambda i: print_word(i, as_lemma=True), pnoun_cluster)
         ).strip(),

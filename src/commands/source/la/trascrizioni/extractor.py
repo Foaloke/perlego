@@ -1,11 +1,10 @@
 import re
 
+from commands.source.source import INFO_PNOUN_CLUSTER
 from db.raw_source import RawSource, SourceCode
 from utils.lambda_utils import lmap
 
-TAGGED_PNOUN_LABEL = 'tagged_pnoun'
-
-CONTROL_SYMBOLS_TO_REMOVE = ['(', ')', '[', ']', '...']
+CONTROL_SYMBOLS_TO_REMOVE = ['(', ')', '[', ']', '...', '* ', '*']
 MARKER = {
     'LOCATION': {'start': '@', 'end': '%'},
     'PERSON': {'start': '$', 'end': '^'}
@@ -70,11 +69,13 @@ def extract_raw_sources(data_file):
             sentence, marked = extract_marked_items_from(marked_sentence)
             raw_source = RawSource(SourceCode.TRASCRIZIONI, sentence)
             for m in marked:
+                start_index = m['start_index']
+                end_index = m['end_index']
                 raw_source.add_info(
-                    m['start_index'],
-                    m['end_index'],
-                    TAGGED_PNOUN_LABEL,
-                    m['type']
+                    start_index,
+                    end_index,
+                    INFO_PNOUN_CLUSTER,
+                    sentence[start_index:end_index]
                 )
             raw_sources.append(raw_source)
     return raw_sources

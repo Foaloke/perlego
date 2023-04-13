@@ -4,6 +4,7 @@ from commands.custom_entities.custom_entities_command import \
     custom_entities_command
 from commands.custom_relations.custom_relations_command import \
     custom_relations_command
+from commands.score_model.score_model_command import score_model_command
 from commands.source.source import SourceCode
 from commands.source.source_command import source_command
 from commands.train.train_command import (train_execute_command,
@@ -79,6 +80,8 @@ def custom_relations(source):
 
 # PREPARE TRAINING
 
+default_accepted_labels = ['PERSON', 'LOCATION']
+
 
 @click.command(name="train_prepare")
 @click.option(
@@ -104,8 +107,29 @@ def custom_relations(source):
     type=click.IntRange(1),
     help="The limit of entries to prepare",
 )
-def train_prepare(dev_size, train_size, limit):
-    return train_prepare_command(float(dev_size), float(train_size), limit)
+@click.option(
+    "--source",
+    "-s",
+    type=click.Choice([c.value for c in SourceCode]),
+    help="If needed, prepare training using only a specific source",
+)
+@click.option(
+    "--accepted_labels",
+    "-al",
+    type=click.STRING,
+    default=','.join(default_accepted_labels),
+    show_default=True,
+    help="Select specific values for the accepted labels",
+)
+def train_prepare(dev_size, train_size, limit, source, accepted_labels):
+    accepted_labels_parsed = [c.strip() for c in accepted_labels.split(',')]
+    return train_prepare_command(
+        float(dev_size),
+        float(train_size),
+        limit,
+        source,
+        accepted_labels_parsed
+    )
 
 
 # TRAINING
@@ -114,6 +138,25 @@ def train_prepare(dev_size, train_size, limit):
 @click.command(name="train")
 def train():
     return train_execute_command()
+
+# SCORE_MODEL
+
+
+@click.command(name="score_model")
+@click.option(
+    "--source",
+    "-s",
+    type=click.Choice([c.value for c in SourceCode]),
+    help="The source with the entries to use to measure performance",
+)
+@click.option(
+    "--start_index",
+    "-si",
+    type=click.IntRange(1),
+    help="The starting index of the entries to use to measure performance",
+)
+def score_model(source, start_index):
+    return score_model_command(source, start_index)
 
 
 # GROUP COMMANDS
@@ -129,6 +172,7 @@ perlego.add_command(custom_entities)
 perlego.add_command(custom_relations)
 perlego.add_command(train_prepare)
 perlego.add_command(train)
+perlego.add_command(score_model)
 
 if __name__ == "__main__":
     perlego()
